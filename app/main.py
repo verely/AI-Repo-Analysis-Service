@@ -17,6 +17,9 @@ from .core.config import get_settings
 
 from .api.route import router
 
+APP_VERSION = "1.0.1"
+
+
 # ── Logging ────────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
@@ -77,3 +80,8 @@ async def _close_shared_httpx_client() -> None:
 @app.get("/health", tags=["ops"])
 async def health() -> dict:
     return {"status": "ok"}
+
+
+@app.get("/version")
+def version():
+    return {"version": APP_VERSION}
