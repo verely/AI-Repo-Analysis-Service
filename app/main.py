@@ -11,13 +11,26 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+# from fastapi.security import APIKeyHeader
 import httpx
+
+# import secrets
 
 from .core.config import get_settings
 
 from .api.route import router
 
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.0.2"
+
+# api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+# def require_api_key(key: str | None = Security(api_key_header)):
+#     # expected =  os.getenv("API_KEY")
+#     expected = get_settings.api_key
+#     if not key or not secrets.compare_digest(key, expected):
+#         raise HTTPException(status_code=401, details="Invalid or missing API key")
 
 
 # ── Logging ────────────────────────────────────────────────────────────────────

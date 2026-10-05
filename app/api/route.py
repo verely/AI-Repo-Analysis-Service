@@ -27,6 +27,7 @@ from ..services.summarization_service import (
 )
 from ..services.llm_factory import get_llm_client
 from ..services.llm_client import LLMClient
+from ..core.security import require_api_key
 
 log = logging.getLogger(__name__)
 router = APIRouter()
@@ -53,7 +54,8 @@ async def _get_repo_data(req: SummarizeRequest):
 @router.post(
     "/summarize",
     response_model=SummarizeResponse,
-    summary="Summarise a public GitHub repository",
+    summary="Summarize a public GitHub repository",
+    dependencies=[Depends(require_api_key)],
 )
 async def summarize_repo(
     req: SummarizeRequest, llm_client: LLMClient = Depends(get_llm_client)
