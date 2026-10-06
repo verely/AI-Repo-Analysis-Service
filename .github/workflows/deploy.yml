@@ -1,0 +1,76 @@
+name: Deploy
+
+# Runs only after the CI workflow succeeds on main
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  id-token: write   # required for OIDC
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: eu-central-1
+  EB_APP: repo-summarizer
+  EB_ENV: ai-summarizer-env
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Deploy exactly the commit that CI tested
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::276115452343:role/github-actions-eb-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      # While the environment is terminated (to save cost), skip instead of failing
+      - name: Check that the EB environment exists
+        id: env
+        run: |
+          STATUS=$(aws elasticbeanstalk describe-environments \
+            --application-name "$EB_APP" --environment-names "$EB_ENV" \
+            --no-include-deleted --query 'Environments[0].Status' --output text)
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          if [ "$STATUS" != "Ready" ]; then
+            echo "::notice::Environment $EB_ENV is '$STATUS' (not Ready) - deploy skipped"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.env.outputs.status == 'Ready'
+        with:
+          python-version: "3.12"
+
+      - name: Install EB CLI
+        if: steps.env.outputs.status == 'Ready'
+        run: pip install awsebcli
+
+      - name: Configure EB CLI for this repo
+        if: steps.env.outputs.status == 'Ready'
+        run: eb init "$EB_APP" --platform docker --region "$AWS_REGION"
+
+      - name: Deploy
+        if: steps.env.outputs.status == 'Ready'
+        run: eb deploy "$EB_ENV" --timeout 15
+
+      - name: Smoke test /health
+        if: steps.env.outputs.status == 'Ready'
+        run: |
+          CNAME=$(aws elasticbeanstalk describe-environments \
+            --application-name "$EB_APP" --environment-names "$EB_ENV" \
+            --no-include-deleted --query 'Environments[0].CNAME' --output text)
+          curl --fail --silent --show-error \
+            --retry 6 --retry-delay 10 --retry-all-errors \
+            "http://$CNAME/health"

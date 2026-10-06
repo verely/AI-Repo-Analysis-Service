@@ -18,7 +18,7 @@ from .core.config import get_settings
 
 from .api.route import router
 
-APP_VERSION = "1.0.2"
+APP_VERSION = "1.0.3"
 
 
 # ── Logging ────────────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ app = FastAPI(
         "AI-powered GitHub repository summarizer. "
         "Supports quick (single-pass) and deep (chunked) modes."
     ),
-    version="1.0.0",
+    version=APP_VERSION,
 )
 
 app.add_middleware(
