@@ -1,0 +1,21 @@
+name: OIDC test (temporary)
+
+# Manual run only. Delete this file after Stage 2 is verified.
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  whoami:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::276115452343:role/github-actions-eb-deploy
+          aws-region: eu-central-1
+
+      - name: Who am I?
+        run: aws sts get-caller-identity
