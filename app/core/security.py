@@ -11,7 +11,6 @@ def require_api_key(key: str | None = Security(api_key_header)) -> None:
     if (
         not key
         or not expected
-        or not expected
         or not secrets.compare_digest(key.encode(), expected.encode())
     ):
         raise HTTPException(
