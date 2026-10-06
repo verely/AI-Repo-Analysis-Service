@@ -13,3 +13,4 @@ Dockerfile
 .mypy_cache/
 logs/
 .elasticbeanstalk
+tests/
